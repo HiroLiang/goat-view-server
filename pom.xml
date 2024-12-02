@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>com.hiro</groupId>
+    <groupId>com.hiro.goat-view</groupId>
     <artifactId>goat-view</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>goat-view</name>
     <description>goat-view</description>
     <packaging>pom</packaging>
