@@ -4,14 +4,22 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.hiro.goat-view</groupId>
+        <groupId>com.hiro</groupId>
         <artifactId>goat-view</artifactId>
         <version>1.0.0</version>
     </parent>
 
     <artifactId>core</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>core</name>
     <description>core</description>
     <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hiro</groupId>
+            <artifactId>util</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
 </project>
