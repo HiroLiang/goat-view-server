@@ -3,12 +3,30 @@ package com.hiro.core.model.unit.chain;
 import java.util.List;
 import java.util.function.Function;
 
-public interface ChainList<T> {
+/**
+ * Define ChainList methods to chain chainable class.
+ */
+public interface ChainList {
 
-    ChainList<T> chain(Chainable<T> obj);
+    /**
+     * Chain class directly
+     * @param obj chainable class
+     * @return this
+     */
+    ChainList chain(Chainable<?> obj);
 
-    ChainList<T> chainIf(Chainable<T> obj, Function<?, Boolean> function);
+    /**
+     * Chain class if pass the check function
+     * @param obj chainable class
+     * @param function check function
+     * @return this
+     */
+    ChainList chainIf(Chainable<?> obj, Function<Chainable<?>, Boolean> function);
 
-    List<T> get();
+    /**
+     * Get chained list
+     * @return List of chainable
+     */
+    List<Chainable<?>> get();
 
 }

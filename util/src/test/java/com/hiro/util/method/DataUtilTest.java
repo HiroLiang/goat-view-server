@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -88,6 +89,72 @@ public class DataUtilTest {
                 }
             }
         }
+    }
+
+    @Test
+    void testConvertPerformance() {
+        log.info("Test convert performance...");
+        Member member = new Member("Harry", 11, "0900000001", "001@gmail.com",
+                "01", "Han", LocalDateTime.now());
+
+        int testTimes = 1000000;
+
+        long startTime, endTime;
+        // Test with normal constructor
+        startTime = System.nanoTime();
+        for (int i = 0; i < testTimes; i++) {
+            new Member(member.getName(), member.getAge(), member.getMobile(), member.getEmail(),
+                    member.getMemberNumber(), member.getNickName(), member.getApplyDate());
+        }
+        endTime = System.nanoTime();
+        long newTime = endTime - startTime;
+
+        // Test with convert method
+        startTime = System.nanoTime();
+        for (int i = 0; i < testTimes; i++) {
+            DataUtil.convert(member, Member.class);
+        }
+        endTime = System.nanoTime();
+        long convertTime = endTime - startTime;
+
+        log.info("Constructor performance time: {} µs", TimeUnit.NANOSECONDS.toMicros(newTime));
+        log.info("Convert performance time: {} µs", TimeUnit.NANOSECONDS.toMicros(convertTime));
+        log.info("Convert ratio: {}", convertTime / newTime);
+
+    }
+
+    @Test
+    void testFlushPerformance() {
+        log.info("Test flush performance...");
+        Client client = new Client("Harry", 91, "0999999991", "101@gmail.com", LocalDateTime.now());
+        Member member = new Member("Harry", 11, "0900000001", "001@gmail.com",
+                "01", "Han", LocalDateTime.now());
+
+        int testTimes = 1000000;
+
+        long startTime, endTime;
+        // Test with normal setters
+        startTime = System.nanoTime();
+        for (int i = 0; i < testTimes; i++) {
+            member.setName(client.name == null ? "Harry" : client.name);
+            member.setAge(client.age);
+            member.setMobile(client.mobile ==null ? "0" : client.mobile);
+            member.setEmail(client.email == null ? "" : client.email);
+        }
+        endTime = System.nanoTime();
+        long setterTime = endTime - startTime;
+
+        // Test with flush method
+        startTime = System.nanoTime();
+        for (int i = 0; i < testTimes; i++) {
+            DataUtil.flush(client, member);
+        }
+        endTime = System.nanoTime();
+        long flushTime = endTime - startTime;
+
+        log.info("Setter Time: {} µs", TimeUnit.NANOSECONDS.toMicros(setterTime));
+        log.info("Flush Time: {} µs", TimeUnit.NANOSECONDS.toMicros(flushTime));
+        log.info("Flush ratio: {}", flushTime / setterTime);
     }
 
     @Test
