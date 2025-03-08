@@ -1,8 +1,8 @@
 package com.hiro.core.modle.chain;
 
 import com.hiro.core.CoreApplication;
-import com.hiro.core.model.unit.chain.Chainable;
-import com.hiro.core.model.unit.chain.GenericChainable;
+import com.hiro.core.model.assemblies.chain.GenericChainable;
+import com.hiro.core.model.components.chain.Chainable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
