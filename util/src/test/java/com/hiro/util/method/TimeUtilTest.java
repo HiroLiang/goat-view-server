@@ -1,5 +1,6 @@
 package com.hiro.util.method;
 
+import com.hiro.util.UtilApplication;
 import com.hiro.util.methods.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(classes = UtilApplication.class)
 public class TimeUtilTest {
 
     static Stream<Arguments> provideDateSamples() {

@@ -1,5 +1,6 @@
 package com.hiro.util.method;
 
+import com.hiro.util.UtilApplication;
 import com.hiro.util.methods.DataUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-@SpringBootTest
+@SpringBootTest(classes = UtilApplication.class)
 public class DataUtilTest {
 
     static List<Member> getMembers() {
