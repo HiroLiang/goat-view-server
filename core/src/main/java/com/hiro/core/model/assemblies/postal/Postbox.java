@@ -3,14 +3,12 @@ package com.hiro.core.model.assemblies.postal;
 import com.hiro.core.model.assemblies.carrier.Parcel;
 import com.hiro.core.model.parts.postal.PostalCode;
 import com.hiro.core.model.parts.registration.Applicant;
-import lombok.Getter;
 import lombok.ToString;
 
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-@Getter
 @ToString
 public class Postbox implements Applicant<PostalCode> {
 
@@ -31,12 +29,12 @@ public class Postbox implements Applicant<PostalCode> {
         return this.postalCode;
     }
 
-    public Parcel<?> getReceivedParcel() {
-        return this.receivedParcels.poll();
+    public Parcel<?> getReceivedParcel() throws InterruptedException {
+        return this.receivedParcels.take();
     }
 
-    public Parcel<?> getReturnedParcel() {
-        return this.returnedParcels.poll();
+    public Parcel<?> getReturnedParcel() throws InterruptedException {
+        return this.returnedParcels.take();
     }
 
     public void deliver(Parcel<?> parcel) {
