@@ -8,6 +8,10 @@ import com.hiro.core.model.parts.store.Storage;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Generic Storage:
+ * Can be combined into other class who need store things
+ */
 public class GenericStorage implements Storage {
 
     private final Map<String, Goods<?>> storage = new ConcurrentHashMap<>();

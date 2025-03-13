@@ -239,7 +239,7 @@ public abstract class PostalNetwork implements Registrable<PostalCode>, Continuo
      * Initialize dispatcher
      */
     protected void initDispatcher() {
-        this.dispatcher = new Thread(this::startDelivery, this.getClass().getSimpleName() + "-dispatcher");
+        this.dispatcher = new Thread(this::startDelivery);
     }
 
     /**
@@ -272,8 +272,6 @@ public abstract class PostalNetwork implements Registrable<PostalCode>, Continuo
                 break;
             }
         }
-
-        if (RunningState.STOPPED.equals(state)) Thread.currentThread().interrupt();
     }
 
     /**

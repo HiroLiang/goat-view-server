@@ -10,6 +10,11 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Abstract postal system:
+ * Define method to encrypt name and verify postal code.
+ * Inherit should deliver secret key
+ */
 @Slf4j
 public abstract class PostalCenter implements PostalSystem {
 
@@ -21,6 +26,11 @@ public abstract class PostalCenter implements PostalSystem {
         this.secretKey = secretKey;
     }
 
+    /**
+     * Generate method of Postal Code
+     * @param name postal code name
+     * @return PostalCode
+     */
     @Override
     public PostalCode applyPostalCode(String name) {
         if (hasName(name)) throw new GenericException(ErrorCode.POSTAL_DOUBLE_REGISTERED);
@@ -31,12 +41,22 @@ public abstract class PostalCenter implements PostalSystem {
         return postalCode;
     }
 
+    /**
+     * Verify Postal Code
+     * @param postalCode PostalCode
+     * @return boolean
+     */
     @Override
     public boolean isRegistered(PostalCode postalCode) {
         log.info("PostalCode: {}", postalCode);
         return applicants.contains(postalCode);
     }
 
+    /**
+     * Check if name registered
+     * @param name postal name
+     * @return boolean
+     */
     private boolean hasName(String name) {
         for (PostalCode postalCode : applicants) {
             if (postalCode.name().equalsIgnoreCase(name))

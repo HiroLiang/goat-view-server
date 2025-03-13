@@ -9,6 +9,11 @@ import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
+/**
+ * Postbox to store received parcels:
+ * 1. Define deliver and take methods
+ * 2. Applicant of postal system
+ */
 @ToString
 public class Postbox implements Applicant<PostalCode> {
 
@@ -29,18 +34,36 @@ public class Postbox implements Applicant<PostalCode> {
         return this.postalCode;
     }
 
+    /**
+     * Take received parcel. Blocked while Queue is empty
+     * @return Parcel
+     * @throws InterruptedException if waiting been interrupted
+     */
     public Parcel<?> getReceivedParcel() throws InterruptedException {
         return this.receivedParcels.take();
     }
 
+    /**
+     * Take returned parcel. Blocked while Queue is empty
+     * @return Parcel
+     * @throws InterruptedException if waiting been interrupted
+     */
     public Parcel<?> getReturnedParcel() throws InterruptedException {
         return this.returnedParcels.take();
     }
 
+    /**
+     * Let postmen deliver parcel
+     * @param parcel Parcel
+     */
     public void deliver(Parcel<?> parcel) {
         this.receivedParcels.add(parcel);
     }
 
+    /**
+     * Let postmen return parcel which ship failed
+     * @param parcel Parcel
+     */
     public void returnParcel(Parcel<?> parcel) {
         this.returnedParcels.add(parcel);
     }

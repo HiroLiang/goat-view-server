@@ -6,6 +6,7 @@ public enum RunningState {
     STOPPED,
     PAUSED,
     DESTROYED,
-    DEAD
+    DEAD,
+    UNKNOWN
 
 }

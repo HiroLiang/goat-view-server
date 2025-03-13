@@ -13,6 +13,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Core Dock:
+ * 1. Define a generic dock
+ * 2. Override init and process methods
+ */
 @Slf4j
 @ToString
 public class CoreDock extends Dock {
@@ -21,6 +26,9 @@ public class CoreDock extends Dock {
         super(postbox, network);
     }
 
+    /**
+     * Define thread pool (Workers of Dock)
+     */
     @Override
     protected void init() {
         this.workers = new ThreadPoolExecutor(
@@ -30,20 +38,25 @@ public class CoreDock extends Dock {
                 new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
+    /**
+     * Routine take parcels which been delivered to Postbox
+     */
     @Override
     protected void process() {
         while (RunningState.STARTED.equals(this.state)) {
             try {
                 Parcel<?> parcel = this.postbox.getReceivedParcel();
+
+                // If catch the signal
                 if (PostalSignal.STOP == parcel) break;
 
-                log.info("Get Parcel: {}", parcel);
+                // TODO Unpack and deliver to Processor
+                log.info("[{}] Get Parcel: {}", this.postbox.getIdentity().name(), parcel.unpack(this.postbox));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
         }
-
-        if (RunningState.STOPPED.equals(this.state)) Thread.currentThread().interrupt();
     }
+
 }

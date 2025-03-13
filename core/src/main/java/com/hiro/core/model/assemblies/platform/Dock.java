@@ -8,26 +8,36 @@ import com.hiro.core.model.assemblies.postal.Postbox;
 import com.hiro.core.model.enumeration.ErrorCode;
 import com.hiro.core.model.enumeration.RunningState;
 import com.hiro.core.model.parts.automation.Continuous;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Dock:
+ * 1. Let platform can communicate with outside
+ * 2. Define a foreman thread dispatching parcels to workers
+ * 3. User should inherit class and decide what workers should do.
+ */
 @Slf4j
 public abstract class Dock implements Continuous {
 
     protected final Postbox postbox;
 
-    protected RunningState state = RunningState.STOPPED;
+    protected volatile RunningState state = RunningState.STOPPED;
 
     protected Thread foreman;
 
     protected ExecutorService workers;
 
-    @Setter
-    private PostalNetwork network;
+    private final ReentrantReadWriteLock stateLock = new ReentrantReadWriteLock();
+
+    private final ReentrantLock shipLock = new ReentrantLock();
+
+    private volatile PostalNetwork network;
 
     protected Dock(Postbox postbox) {
         if (postbox == null) throw new GenericException(ErrorCode.DOCK_ERROR);
@@ -42,79 +52,144 @@ public abstract class Dock implements Continuous {
     @Override
     public synchronized void start() {
         String className = this.getClass().getSimpleName();
-        log.info("Dock [{}] Starting...", className);
+        log.info("Dock [{} - {}] Starting...", className, this.postbox.getIdentity().name());
         if (isState(RunningState.STARTED)) {
-            log.warn("Dock: [{}] is already started...!", className);
+            log.warn("Dock: [{} - {}] is already started...!", className, this.postbox.getIdentity().name());
             return;
         }
 
         init();
         if (this.foreman == null || !this.foreman.isAlive())
-            this.foreman = new Thread(this::process, this.getClass().getSimpleName() + "-foreman");
+            this.foreman = new Thread(this::process);
         if (this.workers == null || this.workers.isTerminated())
             this.workers = Executors.newCachedThreadPool();
 
         this.foreman.start();
-        this.state = RunningState.STARTED;
-        log.info("Dock [{}] started successfully!", className);
+        setState(RunningState.STARTED);
+        log.info("Dock [{} - {}] started successfully!", className, this.postbox.getIdentity().name());
     }
 
     @Override
     public synchronized void pause() {
         if (!isState(RunningState.PAUSED)) {
-            this.state = RunningState.PAUSED;
+            setState(RunningState.PAUSED);
             this.postbox.deliver(PostalSignal.STOP);
         }
-        log.info("Dock [{}] paused.", this.getClass().getSimpleName());
+        log.info("Dock [{} - {}] paused.", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
     }
 
     @Override
     public synchronized void stop() {
-        log.info("Dock [{}] Stopping...", this.getClass().getSimpleName());
+        log.info("Dock [{} - {}] Stopping...", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
         if (isState(RunningState.STOPPED)) {
-            log.warn("Dock [{}] is already stopped...!", this.getClass().getSimpleName());
+            log.warn("Dock [{} - {}] is already stopped...!", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
             return;
         }
 
-        this.state = RunningState.STOPPED;
+        setState(RunningState.STOPPED);
         this.postbox.deliver(PostalSignal.STOP);
         waitForStopped();
-        log.info("Dock [{}] stopped successfully!", this.getClass().getSimpleName());
+        log.info("Dock [{} - {}] stopped successfully!", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
 
     }
 
     @Override
     public synchronized void restart() {
-        log.info("Dock [{}] Restarting...", this.getClass().getSimpleName());
+        log.info("Dock [{} - {}] Restarting...", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
         stop();
         start();
     }
 
     @Override
     public synchronized void destroy() {
-        log.info("Dock [{}] Destroying...", this.getClass().getSimpleName());
+        log.info("Dock [{} - {}] Destroying...", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
 
         stop();
         releaseResources();
 
-        log.info("Dock [{}] Destroyed", this.getClass().getSimpleName());
+        log.info("Dock [{} - {}] Destroyed", this.getClass().getSimpleName(), this.postbox.getIdentity().name());
     }
 
     @Override
-    public synchronized RunningState getState() {
-        return this.state;
+    public RunningState getState() {
+        return readState();
     }
 
-    protected abstract void init();
-
-    protected abstract void process();
-
+    /**
+     * Let who use Dock to ship parcel through this network
+     * @param receiver receiver postal code
+     * @param contain parcel contain
+     * @param containClass contain class
+     * @param <T> contain class
+     */
     public <T> void ship(String receiver, T contain, Class<T> containClass) {
         if (this.network == null) throw new GenericException(ErrorCode.DOCK_NETWORK_ERROR);
 
-        this.network.ship(this.postbox, Parcel.pack(this.postbox, receiver, contain, containClass));
+        shipLock.lock();
+        try {
+            this.network.ship(this.postbox, Parcel.pack(this.postbox, receiver, contain, containClass));
+        } finally {
+            shipLock.unlock();
+        }
     }
 
+    /**
+     * Change network ( Lock ship method while changing )
+     * @param network PostalNetwork
+     */
+    public void useNetwork(PostalNetwork network) {
+        shipLock.lock();
+        try {
+            this.network = network;
+        } finally {
+            shipLock.unlock();
+        }
+    }
+
+    /**
+     * Override to initialize thread pool or do nothing to use default thread pool
+     */
+    protected abstract void init();
+
+    /**
+     * Override to define what should do after started ( Dealing with parcels )
+     */
+    protected abstract void process();
+
+    /**
+     * Give state reading a read lock
+     * @return RunningState
+     */
+    protected RunningState readState() {
+        stateLock.readLock().lock();
+        RunningState result;
+        try {
+            result = this.state;
+        } finally {
+            stateLock.readLock().unlock();
+        }
+        if (RunningState.UNKNOWN.equals(result))
+            throw new GenericException(ErrorCode.DOCK_GET_STATE_ERROR);
+
+        return result;
+    }
+
+    /**
+     * Give state changing a write lock
+     * @param state RunningState to change
+     */
+    protected void setState(RunningState state) {
+        stateLock.writeLock().lock();
+        try {
+            this.state = state;
+        } finally {
+            stateLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Waiting foreman to stop take parcel
+     */
     protected void waitForStopped() {
         if (this.foreman == null) return;
 
@@ -139,6 +214,9 @@ public abstract class Dock implements Continuous {
         this.foreman = null;
     }
 
+    /**
+     * Release all resources if wanted to destroy Dock
+     */
     protected void releaseResources() {
         this.foreman = null;
 
@@ -157,9 +235,15 @@ public abstract class Dock implements Continuous {
         state = RunningState.DESTROYED;
     }
 
+    /**
+     * Check is state equals input state
+     * @param state RunningState
+     * @return boolean
+     */
     private boolean isState(RunningState state) {
         if (this.state == null) throw new GenericException(ErrorCode.POSTAL_DESTROYED);
-        return this.state.equals(state);
+
+        return readState().equals(state);
     }
 
 }
