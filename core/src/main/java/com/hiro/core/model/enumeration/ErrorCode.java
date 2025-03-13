@@ -25,6 +25,7 @@ public enum ErrorCode {
      * About dock
      */
     DOCK_NETWORK_ERROR("DL0001"),
+    DOCK_GET_STATE_ERROR("DL0002"),
     DOCK_ERROR("DL9999"),
 
     /**

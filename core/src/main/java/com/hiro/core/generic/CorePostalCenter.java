@@ -4,23 +4,25 @@ import com.hiro.core.model.assemblies.postal.PostalCenter;
 import jakarta.annotation.PostConstruct;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
+/**
+ * Define a Postal Center for who didn't inherit PostalCenter
+ */
 @Slf4j
 @ToString
-@Component
-@Qualifier("core")
 public class CorePostalCenter extends PostalCenter {
 
-    public CorePostalCenter(@Value("${postal.postal-center.secret-key:12345}") String secretKey) {
+    /**
+     * Inject by config
+     * @param secretKey ${postal.postal-center.secret-key}
+     */
+    public CorePostalCenter(String secretKey) {
         super(secretKey);
     }
 
     @PostConstruct
-    public void init() {
-        log.info("PostalCenter init success");
+    public void postConstruct() {
+        log.info("Use Default PostalCenter: {}... initialized!", this.getClass().getSimpleName());
     }
 
 }
